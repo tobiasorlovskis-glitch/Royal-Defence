@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siege of Eldoria - High Medieval Fantasy Strategy & Tower Defense</title>
+    <meta name="description" content="Command royal watchtowers, arcane spires, and legendary knights to defend the High Crown of Eldoria against relentless orcish and dragon hordes in this tactical fantasy strategy game.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- TOP HEADER & REALM NAVIGATION -->
+    <header class="game-header">
+        <div class="brand-wrapper">
+            <img src="assets/royal_commander.jpg" alt="Sir Kaelen Thorne Royal Commander Crest" class="brand-crest" id="royalCommanderCrest">
+            <div class="brand-titles">
+                <h1 id="gameMainTitle">Siege of Eldoria</h1>
+                <div class="brand-tagline">High Medieval Fantasy Fortress Strategy</div>
+            </div>
+        </div>
+
+        <nav class="nav-controls">
+            <button class="nav-btn" id="btnOpenCodex">📖 Codex & Bestiary</button>
+            <button class="nav-btn" id="btnOpenArmory">⭐ Royal Armory (<span id="hudStars">8</span>)</button>
+            <button class="nav-btn" id="btnOpenMaps">🗺️ Campaign Maps</button>
+
+            <div class="audio-controls">
+                <label class="switch-label">
+                    <input type="checkbox" id="toggleMusic">
+                    <span>🎵 Bard Music</span>
+                </label>
+                <label class="switch-label">
+                    <span>🔊 SFX:</span>
+                    <input type="range" id="sfxVolume" min="0" max="1" step="0.05" value="0.7" style="width: 70px;">
+                </label>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN GAME VIEWPORT -->
+    <main class="main-viewport">
+
+        <!-- BATTLEFIELD CANVAS CONTAINER -->
+        <section class="canvas-wrapper">
+            
+            <!-- TOP CANVAS HUD -->
+            <div class="hud-bar">
+                <div class="hud-group">
+                    <div class="hud-stat gold-stat" title="Royal Treasury (Gold)">
+                        <span class="stat-icon">🪙</span>
+                        <span class="stat-val" id="hudGold">320</span>
+                    </div>
+                    <div class="hud-stat lives-stat" title="Castle Gate Health (Lives)">
+                        <span class="stat-icon">❤️</span>
+                        <span class="stat-val" id="hudLives">20</span>
+                    </div>
+                    <div class="hud-stat mana-stat" title="Arcane Spell Mana">
+                        <span class="stat-icon">💧</span>
+                        <div class="mana-widget">
+                            <span class="stat-val" id="hudMana" style="font-size: 0.8rem;">100 / 150</span>
+                            <div class="mana-bar-track">
+                                <div class="mana-bar-fill" id="hudManaBarFill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-group">
+                    <div class="hud-stat" title="Current Wave">
+                        <span class="stat-icon">⚔️</span>
+                        <span>Wave: </span>
+                        <span class="stat-val" id="hudWave">0 / 15</span>
+                    </div>
+                    <div class="hud-stat" title="Honor Score">
+                        <span class="stat-icon">🏆</span>
+                        <span class="stat-val" id="hudScore">0</span>
+                    </div>
+
+                    <!-- Speed & Pause controls -->
+                    <div class="hud-playback">
+                        <button class="hud-btn speed-btn active" data-speed="1" id="btnSpeed1">1x</button>
+                        <button class="hud-btn speed-btn" data-speed="2" id="btnSpeed2">2x</button>
+                        <button class="hud-btn speed-btn" data-speed="4" id="btnSpeed4">4x</button>
+                        <button class="hud-btn" id="btnPause" title="Hotkey: Spacebar">⏸️ Pause</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOSS ALERT BANNER OVERLAY -->
+            <div class="boss-alert hidden" id="bossAlertBanner">⚔️ WARLORD GORGAR APPROACHES! ⚔️</div>
+
+            <!-- INTERACTIVE STRATEGY CANVAS -->
+            <canvas id="gameCanvas" width="960" height="580"></canvas>
+
+            <!-- WAVE ACTION BUTTONS -->
+            <div class="wave-control-bar">
+                <button class="btn-wave btn-early" id="btnCallEarly" title="Rush the wave for +25 bonus gold!">
+                    ⚡ Call Early (+25g)
+                </button>
+                <button class="btn-wave" id="btnNextWave">
+                    ⚔️ Sound the Horn! (Start Wave)
+                </button>
+            </div>
+
+            <!-- BOTTOM HERO COMMANDER SPELL DOCK -->
+            <div class="hero-spell-dock">
+                <div class="hero-avatar-badge" title="Sir Kaelen Thorne, Grand Protector">
+                    <img src="assets/royal_commander.jpg" alt="Hero Commander Avatar">
+                </div>
+                <div class="spells-container">
+                    <button class="spell-btn" data-spell="meteor" id="btnSpellMeteor" title="Meteor Strike (AoE Destruction) - Hotkey: Q">
+                        <span class="spell-key">Q</span>
+                        <span class="spell-btn-icon">☄️</span>
+                        <span class="spell-mana">40💧</span>
+                        <div class="cooldown-overlay"></div>
+                        <span class="cd-text"></span>
+                    </button>
+                    <button class="spell-btn" data-spell="freeze" id="btnSpellFreeze" title="Chrono Stasis (Global 4.5s Freeze) - Hotkey: W">
+                        <span class="spell-key">W</span>
+                        <span class="spell-btn-icon">❄️</span>
+                        <span class="spell-mana">35💧</span>
+                        <div class="cooldown-overlay"></div>
+                        <span class="cd-text"></span>
+                    </button>
+                    <button class="spell-btn" data-spell="knights" id="btnSpellKnights" title="Royal Vanguard (Deploy Paladins on Road) - Hotkey: E">
+                        <span class="spell-key">E</span>
+                        <span class="spell-btn-icon">🛡️</span>
+                        <span class="spell-mana">30💧</span>
+                        <div class="cooldown-overlay"></div>
+                        <span class="cd-text"></span>
+                    </button>
+                    <button class="spell-btn" data-spell="tithe" id="btnSpellTithe" title="Royal Coffers (+160 Gold) - Hotkey: R">
+                        <span class="spell-key">R</span>
+                        <span class="spell-btn-icon">💰</span>
+                        <span class="spell-mana">25💧</span>
+                        <div class="cooldown-overlay"></div>
+                        <span class="cd-text"></span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SIDEBAR: COMMAND & BASTION ARCHITECTURE -->
+        <aside class="command-sidebar">
+
+            <!-- TOWER BUILD MENU (Triggered by clicking empty plot) -->
+            <div class="panel-card hidden" id="buildMenuPanel">
+                <h3 class="panel-title">⚒️ Construct Defense</h3>
+                <div class="build-grid" id="buildMenuGrid"></div>
+            </div>
+
+            <!-- TOWER INSPECTION & UPGRADE TREE (Triggered by clicking tower) -->
+            <div class="panel-card hidden" id="towerInspectPanel">
+                <div class="inspect-header">
+                    <div class="inspect-icon" id="inspectTowerIcon">🏹</div>
+                    <div class="inspect-meta">
+                        <h3 id="inspectTowerName">Royal Watchtower</h3>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div>Damage: <b id="inspectTowerDamage">28</b></div>
+                    <div>Range: <b id="inspectTowerRange">150</b></div>
+                    <div>Attack Speed: <b id="inspectTowerRate">0.75 /s</b></div>
+                    <div>Total Kills: <b id="inspectTowerKills">0</b></div>
+                </div>
+
+                <div class="priority-selector">
+                    <label for="selectTargetPriority">Target Priority:</label>
+                    <select id="selectTargetPriority" class="styled-select">
+                        <option value="first">🎯 First on Road</option>
+                        <option value="last">🔙 Last on Road</option>
+                        <option value="strongest">💪 Strongest (Max HP)</option>
+                        <option value="weakest">🩸 Weakest (Lowest HP)</option>
+                        <option value="closest">📍 Closest to Tower</option>
+                    </select>
+                </div>
+
+                <div class="actions-box" id="inspectUpgradeActions">
+                    <!-- Dynamic Upgrade Buttons -->
+                </div>
+            </div>
+
+            <!-- TACTICAL WAR COUNCIL & DIRECTIVES -->
+            <div class="panel-card" id="warCouncilPanel">
+                <h3 class="panel-title">📜 Commander's Directives</h3>
+                <ul class="quick-tips">
+                    <li><b>Watchtowers</b> pierce light armor and hit fast.</li>
+                    <li><b>Arcane Spires</b> disintegrate heavy armored Orcs and Siege Golems.</li>
+                    <li><b>Bombards</b> obliterate dense swarms with fiery splash.</li>
+                    <li><b>Glacial Obelisks</b> freeze fast scouts and buy critical time.</li>
+                    <li><b>Paladins</b> advance into melee to physically halt monsters.</li>
+                    <li>Press <b>[Q, W, E, R]</b> to summon Divine Hero Spells!</li>
+                </ul>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- MODAL 1: CODEX & BESTIARY ENCYCLOPEDIA -->
+    <div class="modal-overlay hidden" id="codexModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📖 Tome of Knowledge & Bestiary</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3 class="codex-section-title">Royal Defensive Bastions</h3>
+                <div class="codex-grid" id="codexTowersContainer"></div>
+
+                <h3 class="codex-section-title" style="margin-top: 24px;">Invading Horde Bestiary</h3>
+                <div class="codex-grid" id="codexBestiaryContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ROYAL ARMORY & TECH TREE -->
+    <div class="modal-overlay hidden" id="armoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⭐ Royal Armory & Arcane Mastery</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="armory-banner">
+                    <div>
+                        <b>Kingdom Honor Stars Available:</b>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">Earn stars by defending maps with high gate health!</p>
+                    </div>
+                    <div style="font-size: 1.8rem; font-weight: 800; color: #ffd166;" id="armoryAvailableStars">8</div>
+                </div>
+                <div class="armory-grid" id="armoryPerksGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CAMPAIGN MAP SELECTOR -->
+    <div class="modal-overlay hidden" id="mapSelectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🗺️ Campaign Battlefields of Eldoria</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="map-select-list" id="mapSelectList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: ENDGAME BATTLE REPORT (VICTORY / DEFEAT) -->
+    <div class="modal-overlay hidden" id="endgameModal">
+        <div class="modal-content endgame-modal-content">
+            <h2 class="endgame-title" id="endgameTitle">VICTORY FOR THE REALM!</h2>
+            <p id="endgameDesc">The invaders have been broken upon the battlements of Eldoria!</p>
+            <div class="endgame-stars" id="endgameStars">⭐⭐⭐</div>
+            <div class="endgame-stats-box">
+                Final Score: <b id="endgameScore" style="color: #ffd166;">1,450</b>
+            </div>
+            <div class="endgame-actions">
+                <button class="btn-primary action-btn" id="btnEndgameRestart">🔄 Fight Again</button>
+                <button class="btn-primary action-btn" id="btnEndgameMaps">🗺️ Campaign Map</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- JAVASCRIPT GAME SCRIPTS -->
+    <script src="js/data.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/entities.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+
+    <script>
+        // Bootstrap and start the game engine
+        window.addEventListener('DOMContentLoaded', () => {
+            window.gameInstance = new GameEngine();
+            window.uiManager = new UIManager(window.gameInstance);
+            window.gameInstance.startLoop();
+
+            // First user interaction initializes audio context
+            const resumeAudioOnFirstClick = () => {
+                window.soundEngine.init();
+                window.removeEventListener('click', resumeAudioOnFirstClick);
+                window.removeEventListener('keydown', resumeAudioOnFirstClick);
+            };
+            window.addEventListener('click', resumeAudioOnFirstClick);
+            window.addEventListener('keydown', resumeAudioOnFirstClick);
+        });
+    </script>
+</body>
+</html>
